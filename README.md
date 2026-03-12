@@ -20,7 +20,7 @@ Report automation in **Google Sheets** for a healthcare clinic. The dashboard pr
 
 ## Live Dashboard
 
-[View the Dashboard](https://docs.google.com/spreadsheets/d/14Am94jKItXz3yQnLtNDo9XJ-zuM42zTNG6ZlPtblmTk/edit?gid=1663681422#gid=1663681422)
+[View the Dashboard](https://docs.google.com/spreadsheets/d/14Am94jKItXz3yQnLtNDo9XJ-zuM42zTNG6ZlPtblmTk/preview#gid=1663681422)
 
 ---
 
