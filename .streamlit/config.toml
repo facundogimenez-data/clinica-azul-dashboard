@@ -1,0 +1,10 @@
+[theme]
+base = "light"
+primaryColor = "#007EA7"
+backgroundColor = "#FFFFFF"
+secondaryBackgroundColor = "#E6F4FA"
+textColor = "#00171F"
+font = "sans serif"
+
+# Chart series colors (Streamlit >= 1.40). Older versions ignore this key.
+chartCategoricalColors = ["#00171F", "#003459", "#007EA7", "#00A8E8"]
