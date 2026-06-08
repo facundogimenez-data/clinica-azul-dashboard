@@ -19,7 +19,12 @@ What you'll find in this repo is a **2026 re-architecture and reconstruction**: 
 three reporting areas the clinic relied on — appointment management, resource evaluation,
 and patient satisfaction — rebuilt from scratch on a modern stack (Streamlit + MySQL +
 Docker + n8n + AI), running against an anonymized demo dataset (synthetic patient codes,
-no real names, dates, or contact data).
+fictional names, ages, and comments — no real names, dates, or contact data).
+
+> **Note on language:** the original clinic, spreadsheet, and dashboard were run in
+> Spanish (the clinic is based in Barcelona). For this public portfolio reconstruction,
+> the UI, demo data, and documentation have all been translated to English — the
+> "Clínica Azul" name is kept as the brand identity of the demo clinic.
 
 ## Why the upgrade
 
@@ -95,11 +100,11 @@ one — into a structured signal the dashboard can summarize and trend over time
 
 A single app with three tabs, each covering one of the original report's areas:
 
-- **Gestión de citas** — Total appointments, attendance, no-show rate, reminder
+- **Appointment management** — Total appointments, attendance, no-show rate, reminder
   coverage, and breakdown by service type
-- **Recursos médicos** — Per-professional workload, attendance rate, and
+- **Medical resources** — Per-professional workload, attendance rate, and
   occupancy — useful for staffing and capacity planning decisions
-- **Satisfacción** — Average score, sentiment breakdown (powered by the n8n +
+- **Patient satisfaction** — Average score, sentiment breakdown (powered by the n8n +
   AI pipeline above), and a feed of recent comments with their classification
 
 ## Running it locally
@@ -121,6 +126,11 @@ cd app
 pip install -r requirements.txt
 streamlit run app.py
 ```
+
+## Deploying to EasyPanel
+
+See [`DEPLOY.md`](DEPLOY.md) for a step-by-step guide using `docker-compose.prod.yml`
+(self-contained MySQL + dashboard stack, seeded automatically from `db/schema.sql`).
 
 ## Project structure
 

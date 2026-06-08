@@ -1,5 +1,5 @@
 """
-Clínica Azul Dashboard
+Clinica Azul Dashboard
 ======================
 Streamlit + MySQL dashboard for a healthcare clinic. Replaces the original
 Google Sheets / Apps Script reporting with a live app fed by:
@@ -11,6 +11,11 @@ Google Sheets / Apps Script reporting with a live app fed by:
 Covers the same three areas as the original report — appointment management,
 medical resource evaluation, and patient satisfaction — with richer,
 real-time visualizations.
+
+Note: the original clinic, spreadsheet, and dashboard were run in Spanish
+(the clinic is based in Barcelona). This public reconstruction keeps the
+"Clinica Azul" brand name but translates all UI text and demo data to
+English for portfolio purposes.
 """
 
 import os
@@ -23,7 +28,7 @@ from dotenv import load_dotenv
 load_dotenv()
 
 st.set_page_config(
-    page_title="Clínica Azul — Dashboard",
+    page_title="Clinica Azul — Dashboard",
     page_icon="🦷",
     layout="wide",
 )
@@ -58,6 +63,8 @@ def load_appointments() -> pd.DataFrame:
             s.full_name AS staff_name,
             s.role      AS staff_role,
             p.patient_code,
+            p.first_name,
+            p.last_name,
             p.age_range
         FROM appointments a
         JOIN staff s    ON s.staff_id = a.staff_id
@@ -90,7 +97,7 @@ def load_surveys() -> pd.DataFrame:
 
 
 def section_appointments(df: pd.DataFrame):
-    st.header("📅 Gestión de citas")
+    st.header("📅 Appointment management")
 
     total = len(df)
     attended = (df["status"] == "attended").sum()
@@ -100,60 +107,60 @@ def section_appointments(df: pd.DataFrame):
     reminder_coverage = (df["reminder_sent_at"].notna().sum() / total * 100) if total else 0
 
     col1, col2, col3, col4 = st.columns(4)
-    col1.metric("Citas totales", total)
-    col2.metric("Asistencia", attended)
-    col3.metric("Tasa de no-show", f"{no_show_rate:.1f}%")
-    col4.metric("Cobertura de recordatorios", f"{reminder_coverage:.0f}%")
+    col1.metric("Total appointments", total)
+    col2.metric("Attended", attended)
+    col3.metric("No-show rate", f"{no_show_rate:.1f}%")
+    col4.metric("Reminder coverage", f"{reminder_coverage:.0f}%")
 
     st.caption(
-        "Los recordatorios se envían automáticamente por WhatsApp/Telegram "
-        "(workflow de n8n) ~24 h antes de cada cita — reduce el ausentismo "
-        "sin trabajo manual de recepción."
+        "Reminders are sent automatically via WhatsApp/Telegram (n8n workflow) "
+        "~24h before each appointment — cutting no-shows without any extra "
+        "manual work for reception."
     )
 
     status_counts = df["status"].value_counts().rename(
-        {"attended": "Asistió", "no_show": "No-show", "cancelled": "Cancelada", "scheduled": "Programada"}
+        {"attended": "Attended", "no_show": "No-show", "cancelled": "Cancelled", "scheduled": "Scheduled"}
     )
     st.bar_chart(status_counts)
 
-    st.subheader("Citas por tipo de servicio")
-    service_counts = df.groupby("service_type")["appointment_id"].count().rename("Citas")
+    st.subheader("Appointments by service type")
+    service_counts = df.groupby("service_type")["appointment_id"].count().rename("Appointments")
     st.bar_chart(service_counts)
 
 
 def section_resources(df: pd.DataFrame):
-    st.header("🩺 Evaluación de recursos médicos")
+    st.header("🩺 Medical resource evaluation")
 
     by_staff = (
         df.groupby(["staff_name", "staff_role"])
         .agg(
-            citas=("appointment_id", "count"),
-            asistidas=("status", lambda s: (s == "attended").sum()),
+            appointments=("appointment_id", "count"),
+            attended=("status", lambda s: (s == "attended").sum()),
             no_shows=("status", lambda s: (s == "no_show").sum()),
         )
         .reset_index()
     )
-    by_staff["tasa_ocupacion"] = (by_staff["asistidas"] / by_staff["citas"] * 100).round(1)
+    by_staff["occupancy_rate"] = (by_staff["attended"] / by_staff["appointments"] * 100).round(1)
 
     display = by_staff.rename(
         columns={
-            "staff_name": "Profesional",
-            "staff_role": "Rol",
-            "citas": "Citas asignadas",
-            "asistidas": "Atendidas",
+            "staff_name": "Staff member",
+            "staff_role": "Role",
+            "appointments": "Assigned appointments",
+            "attended": "Attended",
             "no_shows": "No-shows",
-            "tasa_ocupacion": "Tasa de ocupación (%)",
+            "occupancy_rate": "Occupancy rate (%)",
         }
     )
     st.dataframe(display, use_container_width=True, hide_index=True)
-    st.bar_chart(by_staff.set_index("staff_name")["tasa_ocupacion"])
+    st.bar_chart(by_staff.set_index("staff_name")["occupancy_rate"])
 
 
 def section_satisfaction(surveys: pd.DataFrame):
-    st.header("⭐ Satisfacción del paciente")
+    st.header("⭐ Patient satisfaction")
 
     if surveys.empty:
-        st.info("Todavía no hay encuestas registradas.")
+        st.info("No surveys recorded yet.")
         return
 
     avg_score = surveys["score"].mean()
@@ -161,59 +168,59 @@ def section_satisfaction(surveys: pd.DataFrame):
     positive_pct = (sentiment_counts.get("positive", 0) / len(surveys) * 100)
 
     col1, col2, col3 = st.columns(3)
-    col1.metric("Encuestas recibidas", len(surveys))
-    col2.metric("Puntuación media", f"{avg_score:.1f} / 5")
-    col3.metric("Comentarios positivos", f"{positive_pct:.0f}%")
+    col1.metric("Surveys received", len(surveys))
+    col2.metric("Average score", f"{avg_score:.1f} / 5")
+    col3.metric("Positive comments", f"{positive_pct:.0f}%")
 
     st.caption(
-        "Cada comentario se clasifica automáticamente como positivo / neutro / "
-        "negativo mediante un workflow de n8n con un modelo de lenguaje (análisis "
-        "de sentimiento), sin intervención manual."
+        "Each comment is automatically classified as positive / neutral / "
+        "negative by an n8n workflow powered by an LLM (sentiment analysis), "
+        "with no manual review required."
     )
 
     sentiment_chart = sentiment_counts.rename(
-        {"positive": "Positivo", "neutral": "Neutro", "negative": "Negativo"}
+        {"positive": "Positive", "neutral": "Neutral", "negative": "Negative"}
     )
     st.bar_chart(sentiment_chart)
 
-    st.subheader("Comentarios recientes")
+    st.subheader("Recent comments")
     display = surveys[["submitted_at", "service_type", "staff_name", "score", "sentiment", "comment"]].rename(
         columns={
-            "submitted_at": "Fecha",
-            "service_type": "Servicio",
-            "staff_name": "Profesional",
-            "score": "Puntuación",
-            "sentiment": "Sentimiento",
-            "comment": "Comentario",
+            "submitted_at": "Date",
+            "service_type": "Service",
+            "staff_name": "Staff member",
+            "score": "Score",
+            "sentiment": "Sentiment",
+            "comment": "Comment",
         }
     )
     st.dataframe(display, use_container_width=True, hide_index=True)
 
 
 def main():
-    st.title("🦷 Clínica Azul — Dashboard")
+    st.title("🦷 Clinica Azul — Dashboard")
     st.caption(
-        "Reporting en tiempo real: gestión de citas, evaluación de recursos "
-        "médicos y satisfacción del paciente — alimentado por automatizaciones "
-        "de n8n y un modelo de datos en MySQL."
+        "Real-time reporting: appointment management, medical resource "
+        "evaluation, and patient satisfaction — powered by n8n automations "
+        "and a MySQL data model."
     )
 
     try:
         appointments = load_appointments()
         surveys = load_surveys()
     except Exception as exc:
-        st.error(f"No se pudo conectar a la base de datos: {exc}")
+        st.error(f"Could not connect to the database: {exc}")
         st.info(
-            "Configura DB_HOST, DB_PORT, DB_USER, DB_PASSWORD y DB_NAME en un "
-            "archivo .env (ver .env.example) y carga el esquema de db/schema.sql."
+            "Set DB_HOST, DB_PORT, DB_USER, DB_PASSWORD, and DB_NAME in a "
+            ".env file (see .env.example) and load the schema from db/schema.sql."
         )
         return
 
     if appointments.empty:
-        st.warning("No hay citas registradas todavía.")
+        st.warning("No appointments recorded yet.")
         return
 
-    tab1, tab2, tab3 = st.tabs(["Gestión de citas", "Recursos médicos", "Satisfacción"])
+    tab1, tab2, tab3 = st.tabs(["Appointment management", "Medical resources", "Patient satisfaction"])
     with tab1:
         section_appointments(appointments)
     with tab2:
